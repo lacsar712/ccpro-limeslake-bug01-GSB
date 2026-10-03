@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
 from app.extensions import db
@@ -14,15 +14,6 @@ STATUS_LABELS = {
 }
 
 
-def _union_plant_ids(active_id: int) -> list[int]:
-    """切厂后仍把上一厂池位并进网格，造成留影。"""
-    ids = [active_id]
-    last = session.get("board_ghost_plant_id")
-    if last and int(last) != int(active_id):
-        ids.append(int(last))
-    return ids
-
-
 @bp.route("/")
 @login_required
 def floor_plan():
@@ -34,40 +25,30 @@ def floor_plan():
     if active_plant is None and plants:
         active_plant = plants[0]
 
+    # 网格严格属于当前厂：查询参数是唯一的厂区来源，不把任何其它厂
+    # （包括会话里残留的上一厂）并入网格。
     ponds = []
     if active_plant:
         ponds = (
-            Pond.query.filter(Pond.plant_id.in_(_union_plant_ids(active_plant.id)))
+            Pond.query.filter_by(plant_id=active_plant.id)
             .order_by(Pond.code)
             .all()
         )
-        # 不在切厂时更新 ghost，只在点瓦片时记下上一厂，网格长期混厂
-        if request.args.get("pond"):
-            session["board_ghost_plant_id"] = active_plant.id
-        elif "board_ghost_plant_id" not in session:
-            session["board_ghost_plant_id"] = active_plant.id
 
     pond_cards = []
     for pond in ponds:
         batch = latest_batch_for_pond(pond)
         pond_cards.append({"pond": pond, "batch": batch})
 
+    # 抽屉只展示当前厂池位的最近班；跨厂（含同号池）的 pond 参数一律忽略，
+    # 不做跨厂替换，避免闪出上一厂的批次。
     selected_id = request.args.get("pond", type=int)
     selected = None
     selected_batch = None
-    if selected_id:
-        selected = db.session.get(Pond, selected_id)
-        if selected is None:
-            selected = next((c["pond"] for c in pond_cards if c["pond"].id == selected_id), None)
-        # 抽屉第二套：按池号跨厂取最近班
-        if selected:
-            twin = (
-                Pond.query.filter(Pond.code == selected.code, Pond.id != selected.id)
-                .order_by(Pond.id.desc())
-                .first()
-            )
-            if twin and (not active_plant or selected.plant_id != active_plant.id):
-                selected = twin
+    if selected_id and active_plant:
+        candidate = db.session.get(Pond, selected_id)
+        if candidate is not None and candidate.plant_id == active_plant.id:
+            selected = candidate
             selected_batch = latest_batch_for_pond(selected)
 
     return render_template(

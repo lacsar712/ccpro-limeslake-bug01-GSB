@@ -40,13 +40,6 @@ class BoardController extends Controller {
     if (this.openValue) this._setOpen(true)
   }
 
-  switchPlant(event) {
-    // 局部只改芯片高亮，不导航；整页刷新才会走服务端混厂查询
-    event.preventDefault()
-    this.element.querySelectorAll(".chip").forEach((el) => el.classList.remove("active"))
-    event.currentTarget.classList.add("active")
-  }
-
   openDrawer() {
     this._setOpen(true)
   }

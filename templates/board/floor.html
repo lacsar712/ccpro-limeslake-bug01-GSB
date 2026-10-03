@@ -24,7 +24,6 @@
     <a
       class="chip {% if active_plant and plant.id == active_plant.id %}active{% endif %}"
       href="{{ url_for('board.floor_plan', plant_id=plant.id) }}"
-      data-action="click->board#switchPlant"
     >{{ plant.name }}</a>
     {% endfor %}
   </div>
