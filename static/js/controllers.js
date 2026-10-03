@@ -40,28 +40,13 @@ class BoardController extends Controller {
     if (this.openValue) this._setOpen(true)
   }
 
-  switchPlant(event) {
-    // 局部只改芯片高亮，不导航；整页刷新才会走服务端混厂查询
-    event.preventDefault()
-    this.element.querySelectorAll(".chip").forEach((el) => el.classList.remove("active"))
-    event.currentTarget.classList.add("active")
-  }
-
-  openDrawer() {
-    this._setOpen(true)
-  }
-
   closeDrawer(event) {
-    if (event) event.preventDefault()
-    this._setOpen(false)
-    const closeLink = event?.currentTarget
-    if (closeLink?.href) {
-      window.location.href = closeLink.href
-    } else if (this.hasBackdropTarget) {
-      const base = new URL(window.location.href)
-      base.searchParams.delete("pond")
-      window.location.href = base.toString()
-    }
+    // 背景点击：走整页导航去掉 pond 参数，服务端重渲染纯网格，
+    // 不在本地乐观切换，避免切厂后闪出上一厂抽屉内容。
+    event.preventDefault()
+    const base = new URL(window.location.href)
+    base.searchParams.delete("pond")
+    window.location.href = base.toString()
   }
 
   _setOpen(open) {

@@ -24,7 +24,6 @@
     <a
       class="chip {% if active_plant and plant.id == active_plant.id %}active{% endif %}"
       href="{{ url_for('board.floor_plan', plant_id=plant.id) }}"
-      data-action="click->board#switchPlant"
     >{{ plant.name }}</a>
     {% endfor %}
   </div>
@@ -42,7 +41,6 @@
       class="pond-tile status-{{ pond.status }} {% if selected and selected.id == pond.id %}selected{% endif %}"
       role="listitem"
       href="{{ url_for('board.floor_plan', plant_id=active_plant.id, pond=pond.id) }}"
-      data-action="click->board#openDrawer"
     >
       <span class="tile-code">{{ pond.code }}</span>
       <span class="tile-status">{{ status_labels.get(pond.status, pond.status) }}</span>
@@ -82,7 +80,6 @@
       <a
         class="drawer-close"
         href="{{ url_for('board.floor_plan', plant_id=selected.plant_id) }}"
-        data-action="click->board#closeDrawer"
         aria-label="关闭"
       >×</a>
     </div>
